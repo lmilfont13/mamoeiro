@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitação Interativa de Cotação</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-[#FDFBF7] text-[#4A4A4A]">
+
+    <div id="app" class="container mx-auto p-4 sm:p-6 lg:p-8">
+
+        <header class="text-center mb-10">
+            <h1 class="text-3xl md:text-4xl font-bold text-[#3a3a3a]">Solicitação Interativa de Cotação</h1>
+            <p class="mt-2 text-lg text-gray-600">Explore os produtos abaixo para ver os detalhes.</p>
+        </header>
+
+        <main>
+            <section id="products-section">
+                 <div class="text-xl font-semibold mb-6 border-b pb-2 border-gray-300">
+                    <h2 class="text-2xl font-semibold text-[#3a3a3a]">Produtos para Cotação</h2>
+                    <p class="text-base font-normal text-gray-500 mt-1">Clique em um produto para expandir as informações detalhadas, incluindo aplicações e observações relevantes para a cotação.</p>
+                </div>
+                <div id="product-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                </div>
+            </section>
+            
+            <section id="quotation-considerations" class="mt-16 bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+                <h2 class="text-2xl font-semibold text-[#3a3a3a] mb-4">Considerações para Cotação</h2>
+                 <p class="text-base text-gray-600 mb-6">Para agilizar nossa análise, por favor, inclua as seguintes informações em sua proposta para cada um dos produtos listados:</p>
+                <ul class="list-disc list-inside space-y-3 text-gray-700">
+                    <li>Preço unitário</li>
+                    <li>Estrutura de preços para volumes maiores (descontos por quantidade, se aplicável)</li>
+                    <li>Disponibilidade de estoque atual</li>
+                    <li>Prazo de entrega estimado após a confirmação do pedido</li>
+                    <li>Condições e métodos de pagamento aceitos</li>
+                    <li>Informações sobre garantias e políticas de troca ou devolução</li>
+                </ul>
+            </section>
+        </main>
+
+        <footer class="text-center mt-16 pt-8 border-t border-gray-200">
+            <h3 class="font-semibold text-lg text-[#3a3a3a]">Contato para Proposta</h3>
+            <p class="text-gray-600">Agradecemos a atenção e aguardamos sua proposta.</p>
+            <p class="mt-2 text-gray-800 font-medium">Luciano Milfont</p>
+            <p class="text-gray-500">MAMOEIRO</p>
+            <p class="text-gray-500">comercial@mamoeiro.com.br</p>
+        </footer>
+
+    </div>
+
+    <div id="product-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col">
+            <div class="p-6 sm:p-8 border-b border-gray-200 flex justify-between items-start">
+                <h3 id="modal-title" class="text-2xl font-bold text-[#3a3a3a]"></h3>
+                <button id="modal-close-btn" class="text-gray-500 hover:text-gray-800 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-6 sm:p-8 space-y-6 flex-grow">
+                <div class="mb-4">
+                    <img id="modal-image" src="" alt="Imagem do Produto" class="w-full h-auto rounded-lg object-contain max-h-60 mx-auto">
+                </div>
+                <div>
+                    <h4 class="font-semibold text-lg text-[#6B8A7A] mb-2">Descrição</h4>
+                    <p id="modal-description" class="text-gray-700 leading-relaxed"></p>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-lg text-[#6B8A7A] mb-2">Aplicações Típicas</h4>
+                    <p id="modal-applications" class="text-gray-700 leading-relaxed"></p>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-lg text-[#6B8A7A] mb-2">Observações Visuais</h4>
+                    <p id="modal-observations" class="text-gray-700 leading-relaxed"></p>
+                </div>
+            </div>
+             <div class="p-4 bg-gray-50 text-right rounded-b-2xl">
+                <button id="modal-close-btn-footer" class="bg-[#6B8A7A] text-white px-6 py-2 rounded-lg hover:bg-opacity-90 transition-all">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const productData = {
+            'suporte-ombro': {
+                title: 'Suporte de Ombro (Órtese/Tala)',
+                icon: '🦾',
+                imageUrl: 'https://i.ibb.co/k64qqr5N/Imagem-do-Whats-App-de-2025-06-05-s-09-34-47-217339d4.jpg',
+                description: 'Produto ortopédico de suporte e imobilização para o ombro, confeccionado em material flexível (provavelmente neoprene), com sistema de ajuste por velcro. É projetado para fornecer compressão e estabilidade.',
+                applications: 'Utilizado na recuperação de lesões (ex: manguito rotador, luxações), pós-operatório, alívio de dores crônicas no ombro e prevenção de novas lesões durante atividades físicas.',
+                observations: 'Cor preta, design que cobre o ombro e se estende pelo braço e parte do tórax.'
+            },
+            'coletor-urinario': {
+                title: 'Coletor Urinário Portátil (Kit)',
+                icon: '�',
+                imageUrl: 'https://i.ibb.co/TDgpGqm9/Imagem-do-Whats-App-de-2025-06-05-s-09-34-32-5fa6e36a.jpg',
+                description: 'Conjunto para coleta de urina, composto por um funil anatômico (provavelmente para uso universal ou feminino), uma bolsa coletora com capacidade de 1000ml e faixas de fixação. A bolsa possui graduação de volume.',
+                applications: 'Ideal para pacientes com mobilidade reduzida, idosos, pessoas em recuperação, ou para uso em viagens e situações onde o acesso a instalações sanitárias é limitado.',
+                observations: 'Funil de cor amarela, bolsa transparente com marcações de volume e texto em caracteres estrangeiros (asiáticos).'
+            },
+            'dispositivo-anti-ronco': {
+                title: 'Dispositivo Anti-Ronco (Dilatadores)',
+                icon: '🌙',
+                imageUrl: 'https://i.ibb.co/FLM8W8kS/Imagem-do-Whats-App-de-2025-06-05-s-09-33-46-9719dd31.jpg',
+                description: 'Kit composto por diversos dilatadores nasais, desenhados para serem inseridos nas narinas. O objetivo é expandir as vias aéreas nasais, facilitando a respiração e reduzindo o ronco. A embalagem indica que o produto é "BPA FREE".',
+                applications: 'Solução não invasiva para indivíduos que sofrem de ronco leve a moderado, proporcionando uma melhora na qualidade do sono e da respiração noturna.',
+                observations: 'Múltiplos dilatadores em diferentes tamanhos e formatos, geralmente de silicone translúcido ou branco, apresentados em um estojo compacto. A embalagem destaca "Anti Snoring Device" e "Better Sleep".'
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const productGrid = document.getElementById('product-grid');
+            const modal = document.getElementById('product-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalImage = document.getElementById('modal-image');
+            const modalDescription = document.getElementById('modal-description');
+            const modalApplications = document.getElementById('modal-applications');
+            const modalObservations = document.getElementById('modal-observations');
+            const closeButtons = [document.getElementById('modal-close-btn'), document.getElementById('modal-close-btn-footer')];
+
+            Object.keys(productData).forEach(key => {
+                const product = productData[key];
+                const card = document.createElement('div');
+                card.className = 'bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col items-start';
+                card.dataset.productId = key;
+
+                card.innerHTML = `
+                    <div class="mb-4 w-full h-36 flex items-center justify-center overflow-hidden rounded-lg bg-gray-100">
+                        <img src="${product.imageUrl}" alt="${product.title}" class="object-contain max-h-full max-w-full">
+                    </div>
+                    <h3 class="text-xl font-bold text-[#3a3a3a] mb-2">${product.title}</h3>
+                    <p class="text-gray-600 text-sm flex-grow">${product.description.substring(0, 100)}...</p>
+                    <span class="mt-4 text-sm font-semibold text-[#6B8A7A]">Ver detalhes →</span>
+                `;
+                productGrid.appendChild(card);
+            });
+            
+            productGrid.addEventListener('click', (event) => {
+                const card = event.target.closest('[data-product-id]');
+                if (card) {
+                    const productId = card.dataset.productId;
+                    const product = productData[productId];
+                    
+                    modalTitle.textContent = product.title;
+                    modalImage.src = product.imageUrl;
+                    modalImage.alt = `Imagem do Produto: ${product.title}`;
+                    modalDescription.textContent = product.description;
+                    modalApplications.textContent = product.applications;
+                    modalObservations.textContent = product.observations;
+                    
+                    modal.classList.remove('hidden');
+                }
+            });
+
+            const closeModal = () => {
+                modal.classList.add('hidden');
+            };
+
+            closeButtons.forEach(button => button.addEventListener('click', closeModal));
+            modal.addEventListener('click', (event) => {
+                if (event.target === modal) {
+                    closeModal();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+�
