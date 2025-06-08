@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Analítico Interativo de Pagamentos a Fornecedores</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 320px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .chart-container.large-height {
+            height: 450px;
+            max-height: 600px;
+        }
+        @media (min-width: 768px) {
+            .chart-container.large-height {
+                height: 550px;
+                max-height: 700px;
+            }
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <header class="bg-white shadow-md">
+        <div class="container mx-auto px-6 py-4">
+            <h1 class="text-3xl font-bold text-[#003f5c]">Relatório de Pagamentos a Fornecedores</h1>
+            <p class="text-gray-600 mt-1">Análise detalhada do período de Março a Agosto de 2025.</p>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-8">
+        
+        <section id="filters" class="bg-white p-6 rounded-lg shadow-md mb-8 grid grid-cols-1 md:grid-cols-4 lg:grid-cols-7 gap-4 items-end">
+            <div>
+                <label for="startDate" class="block text-sm font-medium text-gray-700">Data Inicial:</label>
+                <input type="date" id="startDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#2f4b7c] focus:ring-[#2f4b7c]">
+            </div>
+            <div>
+                <label for="endDate" class="block text-sm font-medium text-gray-700">Data Final:</label>
+                <input type="date" id="endDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#2f4b7c] focus:ring-[#2f4b7c]">
+            </div>
+            <div>
+                <label for="productFilter" class="block text-sm font-medium text-gray-700">Filtrar por Produto:</label>
+                <select id="productFilter" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#2f4b7c] focus:ring-[#2f4b7c]">
+                    <option value="Todos">Todos</option>
+                </select>
+            </div>
+            <div>
+                <label for="paymentMethodFilter" class="block text-sm font-medium text-gray-700">Filtrar por Meio PGTO:</label>
+                <select id="paymentMethodFilter" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#2f4b7c] focus:ring-[#2f4b7c]">
+                    <option value="Todos">Todos</option>
+                </select>
+            </div>
+            <div>
+                <label for="paymentFormFilter" class="block text-sm font-medium text-gray-700">Filtrar por Forma PGTO:</label>
+                <select id="paymentFormFilter" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#2f4b7c] focus:ring-[#2f4b7c]">
+                    <option value="Todos">Todos</option>
+                </select>
+            </div>
+            <div>
+                <label for="statusFilter" class="block text-sm font-medium text-gray-700">Filtrar por Status PGTO:</label>
+                <select id="statusFilter" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#2f4b7c] focus:ring-[#2f4b7c]">
+                    <option value="Todos">Todos</option>
+                    <option value="Sim">Pago</option>
+                    <option value="Não">Pendente</option>
+                </select>
+            </div>
+            <div class="flex flex-col md:flex-row gap-2 mt-4 md:mt-0 lg:col-span-1">
+                <button id="applyFiltersBtn" class="bg-[#2f4b7c] text-white py-2 px-4 rounded-md hover:bg-[#003f5c] transition duration-300 ease-in-out">Aplicar Filtros</button>
+                <button id="clearFiltersBtn" class="bg-gray-400 text-white py-2 px-4 rounded-md hover:bg-gray-500 transition duration-300 ease-in-out">Limpar Filtros</button>
+            </div>
+        </section>
+
+        <section id="kpis" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-4">
+            <div class="bg-white p-6 rounded-lg shadow-md flex flex-col items-center justify-center">
+                <h2 class="text-lg font-semibold text-gray-600">Total Pago (Fornecedores)</h2>
+                <p id="totalPago" class="text-4xl font-bold text-[#2f4b7c] mt-2">R$0,00</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md flex flex-col items-center justify-center">
+                <h2 class="text-lg font-semibold text-gray-600">Total Pendente (Fornecedores)</h2>
+                <p id="totalPendente" class="text-4xl font-bold text-[#d45087]">R$0,00</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md flex flex-col items-center justify-center">
+                <h2 class="text-lg font-semibold text-gray-600">Total Desembolsado (Estimado)</h2>
+                <p id="totalGeral" class="text-4xl font-bold text-[#003f5c]">R$0,00</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md flex flex-col items-center justify-center">
+                <h2 class="text-lg font-semibold text-gray-600">Fator Conversão Média</h2>
+                <p id="taxaConversao" class="text-4xl font-bold text-[#ff7c43]">0.00</p>
+            </div>
+        </section>
+
+        <p class="text-gray-600 text-sm text-center mb-8">
+            *Os custos de Desconsolidação e Impostos estão pendentes de cálculo e não estão incluídos nos totais exibidos.
+        </p>
+
+        <section id="visualizations" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold mb-1 text-[#003f5c]">Status dos Pagamentos de Fornecedores</h3>
+                <p class="text-gray-600 mb-4 text-sm">Distribuição percentual entre pagamentos já efetuados e aqueles que ainda estão pendentes.</p>
+                <div class="chart-container">
+                    <canvas id="statusPagamentosChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold mb-1 text-[#003f5c]">Distribuição por Meio de Pagamento</h3>
+                <p class="text-gray-600 mb-4 text-sm">Análise dos canais utilizados para a realização dos pagamentos, destacando os mais frequentes.</p>
+                <div class="chart-container">
+                    <canvas id="meioPagamentoChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="bg-white p-6 rounded-lg shadow-md lg:col-span-2">
+                <h3 class="text-xl font-semibold mb-1 text-[#003f5c]">Valor Total Pago por Produto</h3>
+                <p class="text-gray-600 mb-4 text-sm">Comparativo do montante total de pagamentos destinados a cada produto.</p>
+                <div class="chart-container large-height">
+                    <canvas id="totalPorProdutoChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-md lg:col-span-2">
+                <h3 class="text-xl font-semibold mb-1 text-[#003f5c]">Fluxo de Caixa de Despesas Mensais (Fornecedores)</h3>
+                 <p class="text-gray-600 mb-4 text-sm">Acompanhamento da tendência dos valores desembolsados aos fornecedores ao longo dos meses, revelando picos e sazonalidades nas despesas.</p>
+                <div class="chart-container large-height">
+                    <canvas id="fluxoCaixaMensalChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold mb-1 text-[#003f5c]">Pagamentos por Forma (IN vs OFF)</h3>
+                <p class="text-gray-600 mb-4 text-sm">Divisão dos pagamentos entre as modalidades 'IN' e 'OFF', oferecendo insights sobre a natureza das transações.</p>
+                <div class="chart-container">
+                    <canvas id="formaPagamentoChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold mb-1 text-[#003f5c]">Status por Meio de Pagamento</h3>
+                <p class="text-gray-600 mb-4 text-sm">Análise comparativa do status de efetivação (pago vs. pendente) para cada meio de pagamento utilizado.</p>
+                <div class="chart-container">
+                    <canvas id="statusPorMeioPagamentoChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="product-gallery" class="bg-white p-6 rounded-lg shadow-md mt-8">
+            <h3 class="text-xl font-semibold mb-4 text-[#003f5c]">Galeria de Produtos</h3>
+            <p class="text-gray-600 mb-4 text-sm">Explore os produtos com seus respectivos valores totais.</p>
+            <div id="gallery-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center py-6 mt-8">
+        <p class="text-gray-500 text-sm">&copy; 2025 Relatórios Gerenciais Inc. Todos os direitos reservados.</p>
+    </footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    const rawData = [
+        { "Data": "15/05/2025", "Produto": "BICICLETA", "Meio PGTO": "Alibaba", "Valor (RS) CO": 11225.08, "FORMA DE PAGTO": "OFF", "Efetuado?": "Sim", "Fator Conversão": 5.790571, "imageUrl": "https://i.ibb.co/rRrBPZbm/3-XTREME-1.png" },
+        { "Data": "15/05/2025", "Produto": "BICICLETA", "Meio PGTO": "Transferência", "Valor (RS) CO": 25884.19, "FORMA DE PAGTO": "IN", "Efetuado?": "Sim", "Fator Conversão": 5.722551, "imageUrl": "https://i.ibb.co/rRrBPZbm/3-XTREME-1.png" },
+        { "Data": "10/06/2025", "Produto": "BICICLETA", "Meio PGTO": "Alibaba", "Valor (RS) CO": 26686.82, "FORMA DE PAGTO": "OFF", "Efetuado?": "Não", "Fator Conversão": 5.900000, "imageUrl": "https://i.ibb.co/rRrBPZbm/3-XTREME-1.png" },
+        { "Data": "11/06/2025", "Produto": "BICICLETA", "Meio PGTO": "Transferência", "Valor (RS) CO": 62269.25, "FORMA DE PAGTO": "IN", "Efetuado?": "Não", "Fator Conversão": 3.900000, "imageUrl": "https://i.ibb.co/rRrBPZbm/3-XTREME-1.png" },
+        { "Data": "23/04/2025", "Produto": "EXPOSITOR", "Meio PGTO": "Transferência", "Valor (RS) CO": 5864.15, "FORMA DE PAGTO": "OFF", "Efetuado?": "Sim", "Fator Conversão": 6.003061, "imageUrl": "https://i.ibb.co/trpmXZZ/expositor-giratorio.jpg" },
+        { "Data": "05/06/2025", "Produto": "EXPOSITOR", "Meio PGTO": "Alibaba", "Valor (RS) CO": 14429.76, "FORMA DE PAGTO": "OFF", "Efetuado?": "Sim", "Fator Conversão": 5.915436, "imageUrl": "https://i.ibb.co/trpmXZZ/expositor-giratorio.jpg" },
+        { "Data": "23/04/2025", "Produto": "EXPOSITOR", "Meio PGTO": "Transferência", "Valor (RS) CO": 22385.86, "FORMA DE PAGTO": "IN", "Efetuado?": "Sim", "Fator Conversão": 5.729035, "imageUrl": "https://i.ibb.co/trpmXZZ/expositor-giratorio.jpg" },
+        { "Data": "05/06/2025", "Produto": "EXPOSITOR", "Meio PGTO": "Transferência", "Valor (RS) CO": 51195.91, "FORMA DE PAGTO": "IN", "Efetuado?": "Sim", "Fator Conversão": 5.616212, "imageUrl": "https://i.ibb.co/trpmXZZ/expositor-giratorio.jpg" },
+        { "Data": "17/04/2025", "Produto": "ARANDELA", "Meio PGTO": "Transferência", "Valor (RS) CO": 4610.35, "FORMA DE PAGTO": "OFF", "Efetuado?": "Sim", "Fator Conversão": null, "imageUrl": "https://i.ibb.co/zWGXqztZ/Arandela.png" },
+        { "Data": "23/04/2025", "Produto": "ARANDELA", "Meio PGTO": "Alibaba", "Valor (RS) CO": 9271.12, "FORMA DE PAGTO": "IN", "Efetuado?": "Sim", "Fator Conversão": 5.733532, "imageUrl": "https://i.ibb.co/zWGXqztZ/Arandela.png" },
+        { "Data": "05/06/2025", "Produto": "ARANDELA", "Meio PGTO": "Alibaba", "Valor (RS) CO": 10572.80, "FORMA DE PAGTO": "OFF", "Efetuado?": "Sim", "Fator Conversão": 3.900000, "imageUrl": "https://i.ibb.co/zWGXqztZ/Arandela.png" },
+        { "Data": "05/06/2025", "Produto": "ARANDELA", "Meio PGTO": "Transferência", "Valor (RS) CO": 21194.87, "FORMA DE PAGTO": "IN", "Efetuado?": "Sim", "Fator Conversão": 5.617511, "imageUrl": "https://i.ibb.co/zWGXqztZ/Arandela.png" },
+        { "Data": "17/03/2025", "Produto": "ALM FONE DE OUVIDO", "Meio PGTO": "Transferência", "Valor (RS) CO": 4885.40, "FORMA DE PAGTO": "OFF", "Efetuado?": "Sim", "Fator Conversão": 5.769794, "imageUrl": "https://i.ibb.co/p6Pr8qyh/Almofada-Fone-de-ouvido.png" },
+        { "Data": "08/05/2025", "Produto": "ALM FONE DE OUVIDO", "Meio PGTO": "Transferência", "Valor (RS) CO": 12045.78, "FORMA DE PAGTO": "OFF", "Efetuado?": "Sim", "Fator Conversão": 5.917325, "imageUrl": "https://i.ibb.co/p6Pr8qyh/Almofada-Fone-de-ouvido.png" },
+        { "Data": "13/03/2025", "Produto": "ALM FONE DE OUVIDO", "Meio PGTO": "Alibaba", "Valor (RS) CO": 5287.71, "FORMA DE PAGTO": "IN", "Efetuado?": "Sim", "Fator Conversão": 5.828601, "imageUrl": "https://i.ibb.co/p6Pr8qyh/Almofada-Fone-de-ouvido.png" },
+        { "Data": "09/05/2025", "Produto": "ALM FONE DE OUVIDO", "Meio PGTO": "Transferência", "Valor (RS) CO": 12010.89, "FORMA DE PAGTO": "IN", "Efetuado?": "Sim", "Fator Conversão": 5.674079, "imageUrl": "https://i.ibb.co/p6Pr8qyh/Almofada-Fone-de-ouvido.png" },
+        { "Data": "17/03/2025", "Produto": "CHAPÉU SOPHIA", "Meio PGTO": "Transferência", "Valor (RS) CO": 3121.12, "FORMA DE PAGTO": "OFF", "Efetuado?": "Sim", "Fator Conversão": 6.020679, "imageUrl": "https://i.ibb.co/LhhM8ywq/Hb447b99475104de49e05ad0841d5fcfb-H.jpg" },
+        { "Data": "07/05/2025", "Produto": "CHAPÉU SOPHIA", "Meio PGTO": "Transferência", "Valor (RS) CO": 7153.72, "FORMA DE PAGTO": "OFF", "Efetuado?": "Sim", "Fator Conversão": 5.914120, "imageUrl": "https://i.ibb.co/LhhM8ywq/Hb447b99475104de49e05ad0841d5fcfb-H.jpg" },
+        { "Data": "17/03/2025", "Produto": "CHAPÉU SOPHIA", "Meio PGTO": "Alibaba", "Valor (RS) CO": 11783.49, "FORMA DE PAGTO": "IN", "Efetuado?": "Sim", "Fator Conversão": 3.742440, "imageUrl": "https://i.ibb.co/LhhM8ywq/Hb447b99475104de49e05ad0841d5fcfb-H.jpg" },
+        { "Data": "08/05/2025", "Produto": "CHAPÉU SOPHIA", "Meio PGTO": "Transferência", "Valor (RS) CO": 27313.43, "FORMA DE PAGTO": "IN", "Efetuado?": "Sim", "Fator Conversão": 5.704560, "imageUrl": "https://i.ibb.co/LhhM8ywq/Hb447b99475104de49e05ad0841d5fcfb-H.jpg" },
+        { "Data": "24/03/2025", "Produto": "CHAPÉU PESCADOR NOVO MODELO", "Meio PGTO": "Alibaba", "Valor (RS) CO": 13293.76, "FORMA DE PAGTO": "IN", "Efetuado?": "Sim", "Fator Conversão": 5.830596, "imageUrl": "https://i.ibb.co/0V1CMMJ1/alt000pre.png" },
+        { "Data": "26/03/2025", "Produto": "CHAPÉU PESCADOR NOVO MODELO", "Meio PGTO": "Alibaba", "Valor (RS) CO": 6893.25, "FORMA DE PAGTO": "OFF", "Efetuado?": "Sim", "Fator Conversão": 5.802399, "imageUrl": "https://i.ibb.co/0V1CMMJ1/alt000pre.png" },
+        { "Data": "13/03/2025", "Produto": "LAMINA TESOURA", "Meio PGTO": "Transferência", "Valor (RS) CO": 3501.42, "FORMA DE PAGTO": "OFF", "Efetuado?": "Sim", "Fator Conversão": 6.078854, "imageUrl": "https://i.ibb.co/RkDdzNMT/L-mina-Tesoura.png" },
+        { "Data": "13/05/2025", "Produto": "LAMINA TESOURA", "Meio PGTO": "Transferência", "Valor (RS) CO": 7755.00, "FORMA DE PAGTO": "IN", "Efetuado?": "Sim", "Fator Conversão": 5.770089, "imageUrl": "https://i.ibb.co/RkDdzNMT/L-mina-Tesoura.png" },
+        { "Data": "12/03/2025", "Produto": "LAMINA TESOURA", "Meio PGTO": "Alibaba", "Valor (RS) CO": 3914.44, "FORMA DE PAGTO": "IN", "Efetuado?": "Sim", "Fator Conversão": 5.835806, "imageUrl": "https://i.ibb.co/RkDdzNMT/L-mina-Tesoura.png" },
+        { "Data": "29/05/2025", "Produto": "LAMINA TESOURA", "Meio PGTO": "Transferência", "Valor (RS) CO": 8917.33, "FORMA DE PAGTO": "IN", "Efetuado?": "Sim", "Fator Conversão": 5.687071, "imageUrl": "https://i.ibb.co/RkDdzNMT/L-mina-Tesoura.png" },
+        { "Data": "15/04/2025", "Produto": "FOGÃO ELÉTRICO 02 BOCAS", "Meio PGTO": "Transferência", "Valor (RS) CO": 13025.87, "FORMA DE PAGTO": "OFF", "Efetuado?": "Sim", "Fator Conversão": 6.162242, "imageUrl": "https://i.ibb.co/XfzGFSTb/Screenshot-8.png" },
+        { "Data": "27/07/2025", "Produto": "FOGÃO ELÉTRICO 02 BOCAS", "Meio PGTO": "Transferência", "Valor (RS) CO": 114126.78, "FORMA DE PAGTO": "OFF", "Efetuado?": "Não", "Fator Conversão": 6.000000, "imageUrl": "https://i.ibb.co/XfzGFSTb/Screenshot-8.png" },
+        { "Data": "15/04/2025", "Produto": "FOGÃO ELÉTRICO 02 BOCAS", "Meio PGTO": "Alibaba", "Valor (RS) CO": 29031.21, "FORMA DE PAGTO": "IN", "Efetuado?": "Sim", "Fator Conversão": 5.886010, "imageUrl": "https://i.ibb.co/XfzGFSTb/Screenshot-8.png" },
+        { "Data": "24/07/2025", "Produto": "FOGÃO ELÉTRICO 02 BOCAS", "Meio PGTO": "Transferência", "Valor (RS) CO": 266360.64, "FORMA DE PAGTO": "IN", "Efetuado?": "Não", "Fator Conversão": 6.000000, "imageUrl": "https://i.ibb.co/XfzGFSTb/Screenshot-8.png" },
+        { "Data": "15/05/2025", "Produto": "CHURRASQUEIRA E FOGÃO ELÉTRICO 01 BOCA", "Meio PGTO": "Alibaba", "Valor (RS) CO": 8899.56, "FORMA DE PAGTO": "OFF", "Efetuado?": "Sim", "Fator Conversão": 3.900000, "imageUrl": "https://i.ibb.co/B5wfbmXf/Varios-1.png" },
+        { "Data": "15/05/2025", "Produto": "CHURRASQUEIRA E FOGÃO ELÉTRICO 01 BOCA", "Meio PGTO": "Transferência", "Valor (RS) CO": 20765.64, "FORMA DE PAGTO": "IN", "Efetuado?": "Sim", "Fator Conversão": 5.900000, "imageUrl": "https://i.ibb.co/B5wfbmXf/Varios-1.png" },
+        { "Data": "03/08/2025", "Produto": "CHURRASQUEIRA E FOGÃO ELÉTRICO 01 BOCA", "Meio PGTO": "Alibaba", "Valor (RS) CO": 80096.04, "FORMA DE PAGTO": "OFF", "Efetuado?": "Não", "Fator Conversão": 5.900000, "imageUrl": "https://i.ibb.co/B5wfbmXf/Varios-1.png" },
+        { "Data": "03/08/2025", "Produto": "CHURRASQUEIRA E FOGÃO ELÉTRICO 01 BOCA", "Meio PGTO": "Transferência", "Valor (RS) CO": 186890.76, "FORMA DE PAGTO": "IN", "Efetuado?": "Não", "Fator Conversão": 3.900000, "imageUrl": "https://i.ibb.co/B5wfbmXf/Varios-1.png" },
+        { "Data": "15/05/2025", "Produto": "CHALEIRA ELETRICA 2 ORDEM", "Meio PGTO": "Alibaba", "Valor (RS) CO": 2974.25, "FORMA DE PAGTO": "OFF", "Efetuado?": "Sim", "Fator Conversão": 5.900000, "imageUrl": "https://i.ibb.co/mrc9CBjC/Chaleira.png" },
+        { "Data": "15/05/2025", "Produto": "CHALEIRA ELETRICA 2 ORDEM", "Meio PGTO": "Alibaba", "Valor (RS) CO": 26749.01, "FORMA DE PAGTO": "OFF", "Efetuado?": "Não", "Fator Conversão": 5.900000, "imageUrl": "https://i.ibb.co/mrc9CBjC/Chaleira.png" },
+        { "Data": "13/08/2025", "Produto": "CHALEIRA ELETRICA 2 ORDEM", "Meio PGTO": "Transferência", "Valor (RS) CO": 6939.88, "FORMA DE PAGTO": "IN", "Efetuado?": "Sim", "Fator Conversão": 3.900000, "imageUrl": "https://i.ibb.co/mrc9CBjC/Chaleira.png" },
+        { "Data": "13/08/2025", "Produto": "CHALEIRA ELETRICA 2 ORDEM", "Meio PGTO": "Transferência", "Valor (RS) CO": 64051.99, "FORMA DE PAGTO": "IN", "Efetuado?": "Não", "Fator Conversão": 5.900000, "imageUrl": "https://i.ibb.co/mrc9CBjC/Chaleira.png" }
+    ];
+
+    let currentCharts = {};
+
+    const cleanAndStandardizeData = (dataArray) => {
+        return dataArray.map(item => {
+            const meioPgtoCleaned = item["Meio PGTO"].toLowerCase();
+            if (meioPgtoCleaned.includes('ali')) {
+                item["Meio PGTO"] = 'Alibaba';
+            } else if (meioPgtoCleaned.includes('transf')) {
+                item["Meio PGTO"] = 'Transferência';
+            }
+            if (item.Produto && item.Produto.includes('OUVIIXO')) {
+                item.Produto = 'ALM FONE DE OUVIDO';
+            }
+            return item;
+        });
+    };
+
+    const formattedData = cleanAndStandardizeData(rawData);
+
+    const formatCurrency = (value) => {
+        return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    };
+    
+    const palette = {
+        blue1: '#003f5c',
+        blue2: '#2f4b7c',
+        purple1: '#665191',
+        purple2: '#a05195',
+        pink: '#d45087',
+        red: '#f95d6a',
+        orange1: '#ff7c43',
+        orange2: '#ffa600'
+    };
+    const chartColors = [palette.blue2, palette.purple2, palette.red, palette.orange1, palette.blue1, palette.pink, palette.orange2, palette.purple1];
+
+    const tooltipCallback = {
+        plugins: {
+            tooltip: {
+                callbacks: {
+                    title: function(tooltipItems) {
+                        const item = tooltipItems[0];
+                        let label = item.chart.data.labels[item.dataIndex];
+                        if (Array.isArray(label)) {
+                          return label.join(' ');
+                        }
+                        return label;
+                    }
+                }
+            }
+        }
+    };
+
+    function wrapLabel(label, maxWidth = 16) {
+        if (typeof label !== 'string') {
+            return [String(label)]; 
+        }
+        if (label.length <= maxWidth) {
+            return [label];
+        }
+        const words = label.split(' ');
+        const lines = [];
+        let currentLine = '';
+        words.forEach(word => {
+            if ((currentLine + word).length + 1 > maxWidth && currentLine !== '') {
+                lines.push(currentLine.trim());
+                currentLine = word + ' ';
+            } else {
+                currentLine += word + ' ';
+            }
+        });
+        lines.push(currentLine.trim());
+        return lines;
+    }
+
+    function filterData() {
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        const productFilter = document.getElementById('productFilter').value;
+        const paymentMethodFilter = document.getElementById('paymentMethodFilter').value;
+        const paymentFormFilter = document.getElementById('paymentFormFilter').value;
+        const statusFilter = document.getElementById('statusFilter').value;
+
+        return formattedData.filter(item => {
+            const itemDate = new Date(item.Data.split('/').reverse().join('-'));
+            const matchesDate = (!startDate || itemDate >= new Date(startDate)) &&
+                                (!endDate || itemDate <= new Date(endDate));
+            const matchesProduct = (productFilter === 'Todos' || item.Produto === productFilter);
+            const matchesPaymentMethod = (paymentMethodFilter === 'Todos' || item['Meio PGTO'] === paymentMethodFilter);
+            const matchesPaymentForm = (paymentFormFilter === 'Todos' || item['FORMA DE PAGTO'] === paymentFormFilter);
+            const matchesStatus = (statusFilter === 'Todos' || item['Efetuado?'] === statusFilter);
+
+            return matchesDate && matchesProduct && matchesPaymentMethod && matchesPaymentForm && matchesStatus;
+        });
+    }
+
+    function processData(filteredArray, groupBy) {
+        return filteredArray.reduce((acc, item) => {
+            const key = item[groupBy];
+            const value = item['Valor (RS) CO'];
+            acc[key] = (acc[key] || 0) + value;
+            return acc;
+        }, {});
+    }
+    
+    function processDataWithStatus(filteredArray, primaryKey, secondaryKey) {
+        return filteredArray.reduce((acc, item) => {
+            const pKey = item[primaryKey];
+            const sKey = item[secondaryKey];
+            const value = item['Valor (RS) CO'];
+
+            if (!acc[pKey]) {
+                acc[pKey] = {};
+            }
+            acc[pKey][sKey] = (acc[pKey][sKey] || 0) + value;
+            return acc;
+        }, {});
+    }
+
+    function createStatusPagamentosChart(dataToChart) {
+        if (currentCharts.statusPagamentos) currentCharts.statusPagamentos.destroy();
+        const statusData = dataToChart.reduce((acc, item) => {
+            const key = item['Efetuado?'];
+            const value = item['Valor (RS) CO'];
+            acc[key] = (acc[key] || 0) + value;
+            return acc;
+        }, {});
+
+        const ctx = document.getElementById('statusPagamentosChart').getContext('2d');
+        currentCharts.statusPagamentos = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(statusData),
+                datasets: [{
+                    data: Object.values(statusData),
+                    backgroundColor: [palette.blue2, palette.pink],
+                    borderColor: '#ffffff',
+                    borderWidth: 2
+                }]
+            },
+            options: { ...tooltipCallback, responsive: true, maintainAspectRatio: false }
+        });
+    }
+
+    function createMeioPagamentoChart(dataToChart) {
+        if (currentCharts.meioPagamento) currentCharts.meioPagamento.destroy();
+        const meioData = processData(dataToChart, 'Meio PGTO');
+        const ctx = document.getElementById('meioPagamentoChart').getContext('2d');
+        currentCharts.meioPagamento = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(meioData),
+                datasets: [{
+                    data: Object.values(meioData),
+                    backgroundColor: [palette.purple2, palette.red, palette.orange1],
+                    borderColor: '#ffffff',
+                    borderWidth: 2
+                }]
+            },
+            options: { ...tooltipCallback, responsive: true, maintainAspectRatio: false }
+        });
+    }
+
+    function createFormaPagamentoChart(dataToChart) {
+        if (currentCharts.formaPagamento) currentCharts.formaPagamento.destroy();
+        const formaData = processData(dataToChart, 'FORMA DE PAGTO');
+        const ctx = document.getElementById('formaPagamentoChart').getContext('2d');
+        currentCharts.formaPagamento = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: Object.keys(formaData),
+                datasets: [{
+                    data: Object.values(formaData),
+                    backgroundColor: [palette.orange1, palette.purple1, palette.blue1],
+                    borderColor: '#ffffff',
+                    borderWidth: 2
+                }]
+            },
+            options: { ...tooltipCallback, responsive: true, maintainAspectRatio: false }
+        });
+    }
+    
+    function createTotalPorProdutoChart(dataToChart) {
+        if (currentCharts.totalPorProduto) currentCharts.totalPorProduto.destroy();
+        const produtoData = processData(dataToChart, 'Produto');
+        const sortedData = Object.entries(produtoData).sort(([,a],[,b]) => b-a);
+        const labels = sortedData.map(item => wrapLabel(item[0]));
+        const values = sortedData.map(item => item[1]);
+        
+        const ctx = document.getElementById('totalPorProdutoChart').getContext('2d');
+        currentCharts.totalPorProduto = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Valor Total (R$)',
+                    data: values,
+                    backgroundColor: chartColors,
+                }]
+            },
+            options: {
+                ...tooltipCallback,
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'R$ ' + (value / 1000) + 'k';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function createFluxoCaixaMensalChart(dataToChart) {
+        if (currentCharts.fluxoCaixaMensal) currentCharts.fluxoCaixaMensal.destroy();
+        const monthlyExpenditure = {};
+        const categories = new Set();
+
+        dataToChart.forEach(item => {
+            const dateParts = item.Data.split('/'); 
+            const dateObj = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]); 
+            const yearMonthKey = `${dateObj.getFullYear()}-${(dateObj.getMonth() + 1).toString().padStart(2, '0')}`; 
+            
+            if (!monthlyExpenditure[yearMonthKey]) {
+                monthlyExpenditure[yearMonthKey] = {};
+            }
+            const product = item.Produto;
+            categories.add(product);
+            monthlyExpenditure[yearMonthKey][product] = (monthlyExpenditure[yearMonthKey][product] || 0) + item['Valor (RS) CO'];
+        });
+
+        const sortedYearMonths = Object.keys(monthlyExpenditure).sort(); 
+
+        const labels = sortedYearMonths.map(yearMonth => {
+            const [year, month] = yearMonth.split('-');
+            return new Date(year, month - 1, 1).toLocaleString('pt-BR', { month: 'short', year: '2-digit' });
+        });
+
+        const sortedCategories = Array.from(categories).sort();
+
+        const datasets = sortedCategories.map((category, index) => {
+            return {
+                label: wrapLabel(category),
+                data: sortedYearMonths.map(month => monthlyExpenditure[month][category] || 0),
+                backgroundColor: chartColors[index % chartColors.length],
+            };
+        });
+
+        const ctx = document.getElementById('fluxoCaixaMensalChart').getContext('2d');
+        currentCharts.fluxoCaixaMensal = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: datasets,
+            },
+            options: {
+                ...tooltipCallback,
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        stacked: true,
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'R$ ' + (value / 1000) + 'k';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function createStatusPorMeioPagamentoChart(dataToChart) {
+        if (currentCharts.statusPorMeioPagamento) currentCharts.statusPorMeioPagamento.destroy();
+        const statusByMethod = processDataWithStatus(dataToChart, 'Meio PGTO', 'Efetuado?');
+        const labels = Object.keys(statusByMethod);
+        const simData = labels.map(label => statusByMethod[label]['Sim'] || 0);
+        const naoData = labels.map(label => statusByMethod[label]['Não'] || 0);
+
+        const ctx = document.getElementById('statusPorMeioPagamentoChart').getContext('2d');
+        currentCharts.statusPorMeioPagamento = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Efetuado',
+                        data: simData,
+                        backgroundColor: palette.blue2,
+                    },
+                    {
+                        label: 'Pendente',
+                        data: naoData,
+                        backgroundColor: palette.pink,
+                    }
+                ]
+            },
+            options: {
+                ...tooltipCallback,
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { stacked: true },
+                    y: { stacked: true, beginAtZero: true }
+                }
+            }
+        });
+    }
+
+    function calculateKPIs(dataToChart) {
+        const totalPagoFornecedores = dataToChart.filter(d => d['Efetuado?'] === 'Sim').reduce((sum, item) => sum + item['Valor (RS) CO'], 0);
+        const totalPendenteFornecedores = dataToChart.filter(d => d['Efetuado?'] === 'Não').reduce((sum, item) => sum + item['Valor (RS) CO'], 0);
+        
+        const totalDesembolsado = dataToChart.reduce((sum, item) => sum + item['Valor (RS) CO'], 0);
+
+        const fatores = dataToChart.map(d => d['Fator Conversão']).filter(f => f != null);
+        const taxaConversaoMedia = fatores.length > 0 ? fatores.reduce((sum, item) => sum + item, 0) / fatores.length : 0;
+
+        document.getElementById('totalPago').textContent = formatCurrency(totalPagoFornecedores);
+        document.getElementById('totalPendente').textContent = formatCurrency(totalPendenteFornecedores);
+        document.getElementById('totalGeral').textContent = formatCurrency(totalDesembolsado);
+        document.getElementById('taxaConversao').textContent = taxaConversaoMedia.toFixed(2);
+    }
+
+    function updateAllCharts() {
+        const filteredData = filterData();
+        calculateKPIs(filteredData);
+        createStatusPagamentosChart(filteredData);
+        createMeioPagamentoChart(filteredData);
+        createFormaPagamentoChart(filteredData);
+        createTotalPorProdutoChart(filteredData);
+        createFluxoCaixaMensalChart(filteredData);
+        createStatusPorMeioPagamentoChart(filteredData);
+        renderProductGallery(filteredData);
+    }
+
+    function populateProductFilter() {
+        const productFilterSelect = document.getElementById('productFilter');
+        productFilterSelect.innerHTML = '<option value="Todos">Todos</option>';
+        const uniqueProducts = [...new Set(formattedData.map(item => item.Produto))].sort();
+        uniqueProducts.forEach(product => {
+            const option = document.createElement('option');
+            option.value = product;
+            option.textContent = product;
+            productFilterSelect.appendChild(option);
+        });
+    }
+
+    function populatePaymentMethodFilter() {
+        const paymentMethodFilterSelect = document.getElementById('paymentMethodFilter');
+        paymentMethodFilterSelect.innerHTML = '<option value="Todos">Todos</option>';
+        const uniqueMethods = [...new Set(formattedData.map(item => item['Meio PGTO']))].sort();
+        uniqueMethods.forEach(method => {
+            const option = document.createElement('option');
+            option.value = method;
+            option.textContent = method;
+            paymentMethodFilterSelect.appendChild(option);
+        });
+    }
+
+    function populatePaymentFormFilter() {
+        const paymentFormFilterSelect = document.getElementById('paymentFormFilter');
+        paymentFormFilterSelect.innerHTML = '<option value="Todos">Todos</option>';
+        const uniqueForms = [...new Set(formattedData.map(item => item['FORMA DE PAGTO']))].sort();
+        uniqueForms.forEach(form => {
+            const option = document.createElement('option');
+            option.value = form;
+            option.textContent = form;
+            paymentFormFilterSelect.appendChild(option);
+        });
+    }
+
+    function renderProductGallery(dataToChart) {
+        const galleryContainer = document.getElementById('gallery-container');
+        galleryContainer.innerHTML = ''; 
+
+        const productTotals = {};
+        const productImages = {};
+
+        formattedData.forEach(item => {
+            if (item.imageUrl) {
+                productImages[item.Produto] = item.imageUrl;
+            }
+        });
+
+        dataToChart.forEach(item => {
+            productTotals[item.Produto] = (productTotals[item.Produto] || 0) + item['Valor (RS) CO'];
+        });
+
+
+        Object.entries(productTotals).sort(([,a],[,b]) => b-a).forEach(([product, totalValue]) => {
+            const galleryItem = document.createElement('div');
+            galleryItem.className = 'bg-gray-50 p-4 rounded-lg shadow-sm flex flex-col items-center';
+            
+            let imageUrlToUse;
+            if (productImages[product]) {
+                imageUrlToUse = productImages[product];
+            } else {
+                const productLabelForImage = wrapLabel(product);
+                const encodedText = Array.isArray(productLabelForImage) ? productLabelForImage.join('+') : String(productLabelForImage);
+                imageUrlToUse = `https://placehold.co/100x100/${palette.blue1.substring(1)}/ffffff?text=${encodedText}`;
+            }
+
+            galleryItem.innerHTML = `
+                <img src="${imageUrlToUse}" alt="${product}" class="w-24 h-24 object-contain mb-4 rounded-md">
+                <h4 class="text-md font-semibold text-[#2f4b7c] text-center">${product}</h4>
+                <p class="text-sm text-gray-600 mt-2">${formatCurrency(totalValue)}</p>
+            `;
+            galleryContainer.appendChild(galleryItem);
+        });
+    }
+
+    document.getElementById('applyFiltersBtn').addEventListener('click', updateAllCharts);
+    document.getElementById('clearFiltersBtn').addEventListener('click', () => {
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+        document.getElementById('productFilter').value = 'Todos';
+        document.getElementById('paymentMethodFilter').value = 'Todos';
+        document.getElementById('paymentFormFilter').value = 'Todos';
+        document.getElementById('statusFilter').value = 'Todos';
+        updateAllCharts();
+    });
+
+    populateProductFilter();
+    populatePaymentMethodFilter();
+    populatePaymentFormFilter();
+    updateAllCharts(); 
+});
+</script>
+
+</body>
+</html>
