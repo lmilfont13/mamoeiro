@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  body {
+    font-size: 12px;
+  }
+  
+  .page-break {
+    page-break-before: always;
+  }
+}
