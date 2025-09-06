@@ -3,175 +3,604 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solicitação de Cotação</title>
+    <title>Controle de Containers - Importação China</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
         body {
             font-family: 'Inter', sans-serif;
         }
-        .modal-backdrop {
-            background-color: rgba(0, 0, 0, 0.5);
+        
+        .ship-animation {
+            animation: sailing 3s ease-in-out infinite;
+        }
+        
+        @keyframes sailing {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-5px) rotate(1deg); }
+        }
+        
+        .wave {
+            animation: wave 2s ease-in-out infinite;
+        }
+        
+        @keyframes wave {
+            0%, 100% { transform: scaleY(1); }
+            50% { transform: scaleY(1.2); }
+        }
+        
+        .progress-bar {
+            background: linear-gradient(90deg, #3B82F6, #1D4ED8);
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: -200px 0; }
+            100% { background-position: 200px 0; }
+        }
+        
+        .status-urgent { animation: pulse 2s infinite; }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
     </style>
 </head>
-<body class="bg-[#FDFBF7] text-[#4A4A4A]">
+<body class="bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 min-h-screen text-white">
+    <!-- Header -->
+    <header class="bg-slate-800/50 backdrop-blur-sm border-b border-slate-700 p-6">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold text-white">Controle de Containers</h1>
+                <p class="text-slate-300 mt-1">Importação China - Monitoramento em Tempo Real</p>
+            </div>
+            <div class="text-right">
+                <div class="text-2xl font-bold text-blue-400" id="currentTime"></div>
+                <div class="text-sm text-slate-400">Horário de Brasília</div>
+            </div>
+        </div>
+    </header>
 
-    <div id="app" class="container mx-auto p-4 sm:p-6 lg:p-8">
-
-        <header class="text-center mb-10">
-            <h1 class="text-3xl md:text-4xl font-bold text-[#3a3a3a]">Solicitação  de Cotação</h1>
-            <p class="mt-2 text-lg text-gray-600">Explore os produtos abaixo para ver os detalhes.</p>
-        </header>
-
-        <main>
-            <section id="products-section">
-                 <div class="text-xl font-semibold mb-6 border-b pb-2 border-gray-300">
-                    <h2 class="text-2xl font-semibold text-[#3a3a3a]">Produtos para Cotação</h2>
-                    <p class="text-base font-normal text-gray-500 mt-1">Clique em um produto para expandir as informações detalhadas, incluindo aplicações e observações relevantes para a cotação.</p>
+    <div class="max-w-7xl mx-auto p-6 space-y-6">
+        <!-- Resumo Geral -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-slate-400 text-sm">Embarcados</p>
+                        <p class="text-3xl font-bold text-blue-400" id="transitCount">0</p>
+                    </div>
+                    <div class="text-blue-400">🚢</div>
                 </div>
-                <div id="product-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                </div>
-            </section>
+            </div>
             
-            <section id="quotation-considerations" class="mt-16 bg-white p-8 rounded-xl shadow-sm border border-gray-200">
-                <h2 class="text-2xl font-semibold text-[#3a3a3a] mb-4">Considerações para Cotação</h2>
-                 <p class="text-base text-gray-600 mb-6">Para agilizar nossa análise, por favor, inclua as seguintes informações em sua proposta para cada um dos produtos listados:</p>
-                <ul class="list-disc list-inside space-y-3 text-gray-700">
-                    <li>Preço unitário</li>
-                    <li>Estrutura de preços para volumes maiores (descontos por quantidade, se aplicável)</li>
-                    <li>Disponibilidade de estoque atual</li>
-                    <li>Prazo de entrega estimado após a confirmação do pedido</li>
-                    <li>Condições e métodos de pagamento aceitos</li>
-                    <li>Informações sobre garantias e políticas de troca ou devolução</li>
-                </ul>
-            </section>
-        </main>
+            <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-slate-400 text-sm">Chegando Hoje</p>
+                        <p class="text-3xl font-bold text-green-400" id="todayCount">0</p>
+                    </div>
+                    <div class="text-green-400">📦</div>
+                </div>
+            </div>
+            
+            <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-slate-400 text-sm">Atrasados</p>
+                        <p class="text-3xl font-bold text-red-400" id="delayedCount">0</p>
+                    </div>
+                    <div class="text-red-400">⚠️</div>
+                </div>
+            </div>
+            
+            <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-slate-400 text-sm">Total Containers</p>
+                        <p class="text-3xl font-bold text-purple-400" id="totalCount">0</p>
+                    </div>
+                    <div class="text-purple-400">📊</div>
+                </div>
+            </div>
+        </div>
 
-        <footer class="text-center mt-16 pt-8 border-t border-gray-200">
-            <h3 class="font-semibold text-lg text-[#3a3a3a]">Contato para Proposta</h3>
-            <p class="text-gray-600">Agradecemos a atenção e aguardamos sua proposta.</p>
-            <p class="mt-2 text-gray-800 font-medium">Luciano Milfont</p>
-            <p class="text-gray-500">MAMOEIRO</p>
-            <p class="text-gray-500">comercial@mamoeiro.com.br</p>
-        </footer>
+        <!-- Botão Adicionar Container -->
+        <div class="flex justify-end">
+            <button onclick="showAddModal()" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-semibold transition-colors flex items-center gap-2">
+                <span>➕</span> Adicionar Container
+            </button>
+        </div>
 
+        <!-- Lista de Containers -->
+        <div class="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700 overflow-hidden">
+            <div class="p-6 border-b border-slate-700">
+                <h2 class="text-xl font-semibold">Containers em Monitoramento</h2>
+            </div>
+            <div id="containersList" class="divide-y divide-slate-700">
+                <!-- Containers serão inseridos aqui -->
+            </div>
+        </div>
     </div>
 
-    <div id="product-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col">
-            <div class="p-6 sm:p-8 border-b border-gray-200 flex justify-between items-start">
-                <h3 id="modal-title" class="text-2xl font-bold text-[#3a3a3a]"></h3>
-                <button id="modal-close-btn" class="text-gray-500 hover:text-gray-800 transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+    <!-- Modal Adicionar Container -->
+    <div id="addModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-50">
+        <div class="bg-slate-800 rounded-xl p-8 max-w-md w-full mx-4 border border-slate-700">
+            <h3 class="text-xl font-semibold mb-6">Adicionar Novo Container</h3>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Número do Container</label>
+                    <input type="text" id="containerNumber" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Ex: TCLU1234567">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Porto de Origem</label>
+                    <select id="originPort" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500">
+                        <option value="Shanghai">Shanghai</option>
+                        <option value="Shenzhen">Shenzhen</option>
+                        <option value="Ningbo">Ningbo</option>
+                        <option value="Qingdao">Qingdao</option>
+                        <option value="Guangzhou">Guangzhou</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Porto de Destino</label>
+                    <select id="destinationPort" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500">
+                        <option value="Santos">Santos - SP</option>
+                        <option value="Rio de Janeiro">Rio de Janeiro - RJ</option>
+                        <option value="Paranaguá">Paranaguá - PR</option>
+                        <option value="Itajaí">Itajaí - SC</option>
+                        <option value="Salvador">Salvador - BA</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Data de Saída</label>
+                    <input type="date" id="departureDate" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Previsão de Chegada</label>
+                    <input type="date" id="arrivalDate" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Descrição da Carga</label>
+                    <input type="text" id="cargoDescription" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500" placeholder="Ex: Eletrônicos, Têxteis, etc.">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Status</label>
+                    <select id="containerStatus" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500">
+                        <option value="Em Produção">Em Produção</option>
+                        <option value="Embarcado">Embarcado</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Números dos Produtos</label>
+                    <input type="text" id="productNumbers" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500" placeholder="Ex: 24, 25, 26">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Quantidade de Containers</label>
+                    <input type="number" id="containerCount" min="1" value="1" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+            
+            <div class="flex gap-4 mt-8">
+                <button onclick="hideAddModal()" class="flex-1 bg-slate-600 hover:bg-slate-700 px-4 py-3 rounded-lg font-semibold transition-colors">
+                    Cancelar
                 </button>
-            </div>
-            <div class="p-6 sm:p-8 space-y-6 flex-grow">
-                <div class="mb-4">
-                    <img id="modal-image" src="" alt="Imagem do Produto" class="w-full h-auto rounded-lg object-contain max-h-60 mx-auto">
-                </div>
-                <div>
-                    <h4 class="font-semibold text-lg text-[#6B8A7A] mb-2">Descrição</h4>
-                    <p id="modal-description" class="text-gray-700 leading-relaxed"></p>
-                </div>
-                <div>
-                    <h4 class="font-semibold text-lg text-[#6B8A7A] mb-2">Aplicações Típicas</h4>
-                    <p id="modal-applications" class="text-gray-700 leading-relaxed"></p>
-                </div>
-                <div>
-                    <h4 class="font-semibold text-lg text-[#6B8A7A] mb-2">Observações Visuais</h4>
-                    <p id="modal-observations" class="text-gray-700 leading-relaxed"></p>
-                </div>
-            </div>
-             <div class="p-4 bg-gray-50 text-right rounded-b-2xl">
-                <button id="modal-close-btn-footer" class="bg-[#6B8A7A] text-white px-6 py-2 rounded-lg hover:bg-opacity-90 transition-all">Fechar</button>
+                <button onclick="addContainer()" class="flex-1 bg-blue-600 hover:bg-blue-700 px-4 py-3 rounded-lg font-semibold transition-colors">
+                    Adicionar
+                </button>
             </div>
         </div>
     </div>
 
     <script>
-        const productData = {
-            'suporte-ombro': {
-                title: 'Suporte de Ombro (Órtese/Tala)',
-                icon: '🦾',
-                imageUrl: 'https://i.ibb.co/k64qqr5N/Imagem-do-Whats-App-de-2025-06-05-s-09-34-47-217339d4.jpg',
-                description: 'Produto ortopédico de suporte e imobilização para o ombro, confeccionado em material flexível (provavelmente neoprene), com sistema de ajuste por velcro. É projetado para fornecer compressão e estabilidade.',
-                applications: 'Utilizado na recuperação de lesões (ex: manguito rotador, luxações), pós-operatório, alívio de dores crônicas no ombro e prevenção de novas lesões durante atividades físicas.',
-                observations: 'Cor preta, design que cobre o ombro e se estende pelo braço e parte do tórax.'
+        let containers = [
+            {
+                id: 1,
+                number: "Container 24",
+                origin: "Shanghai",
+                destination: "Santos",
+                departureDate: "2025-08-15",
+                arrivalDate: "2025-09-04",
+                cargo: "Bicicleta Ergométrica",
+                status: "Embarcado",
+                containerCount: 1,
+                productNumbers: "24"
             },
-            'coletor-urinario': {
-                title: 'Coletor Urinário Portátil (Kit)',
-                icon: '�',
-                imageUrl: 'https://i.ibb.co/TDgpGqm9/Imagem-do-Whats-App-de-2025-06-05-s-09-34-32-5fa6e36a.jpg',
-                description: 'Conjunto para coleta de urina, composto por um funil anatômico (provavelmente para uso universal ou feminino), uma bolsa coletora com capacidade de 1000ml e faixas de fixação. A bolsa possui graduação de volume.',
-                applications: 'Ideal para pacientes com mobilidade reduzida, idosos, pessoas em recuperação, ou para uso em viagens e situações onde o acesso a instalações sanitárias é limitado.',
-                observations: 'Funil de cor amarela, bolsa transparente com marcações de volume e texto em caracteres estrangeiros (asiáticos).'
+            {
+                id: 2,
+                number: "Containers 25,26",
+                origin: "Shenzhen",
+                destination: "Santos",
+                departureDate: "2025-08-30",
+                arrivalDate: "2025-09-19",
+                cargo: "Churrasqueira e Fogão 1 Boca",
+                status: "Embarcado",
+                containerCount: 2,
+                productNumbers: "25, 26"
             },
-            'dispositivo-anti-ronco': {
-                title: 'Dispositivo Anti-Ronco (Dilatadores)',
-                icon: '🌙',
-                imageUrl: 'https://i.ibb.co/FLM8W8kS/Imagem-do-Whats-App-de-2025-06-05-s-09-33-46-9719dd31.jpg',
-                description: 'Kit composto por diversos dilatadores nasais, desenhados para serem inseridos nas narinas. O objetivo é expandir as vias aéreas nasais, facilitando a respiração e reduzindo o ronco. A embalagem indica que o produto é "BPA FREE".',
-                applications: 'Solução não invasiva para indivíduos que sofrem de ronco leve a moderado, proporcionando uma melhora na qualidade do sono e da respiração noturna.',
-                observations: 'Múltiplos dilatadores em diferentes tamanhos e formatos, geralmente de silicone translúcido ou branco, apresentados em um estojo compacto. A embalagem destaca "Anti Snoring Device" e "Better Sleep".'
+            {
+                id: 3,
+                number: "Containers 27,28,29",
+                origin: "Ningbo",
+                destination: "Santos",
+                departureDate: "2025-08-31",
+                arrivalDate: "2025-09-20",
+                cargo: "Chaleiras",
+                status: "Embarcado",
+                containerCount: 3,
+                productNumbers: "27, 28, 29"
+            },
+            {
+                id: 4,
+                number: "Container 30",
+                origin: "Shanghai",
+                destination: "Santos",
+                departureDate: "2025-09-02",
+                arrivalDate: "2025-09-22",
+                cargo: "WaterPulse/Esteira",
+                status: "Embarcado",
+                containerCount: 1,
+                productNumbers: "30"
+            },
+            {
+                id: 5,
+                number: "Containers 31,32,33",
+                origin: "Guangzhou",
+                destination: "Santos",
+                departureDate: "2025-09-11",
+                arrivalDate: "2025-10-01",
+                cargo: "Mops",
+                status: "Em Produção",
+                containerCount: 3,
+                productNumbers: "31, 32, 33"
+            },
+            {
+                id: 6,
+                number: "Container 34",
+                origin: "Shenzhen",
+                destination: "Santos",
+                departureDate: "2025-09-11",
+                arrivalDate: "2025-10-01",
+                cargo: "Kskin",
+                status: "Em Produção",
+                containerCount: 1,
+                productNumbers: "34"
+            },
+            {
+                id: 7,
+                number: "Containers 35,36,37,38",
+                origin: "Ningbo",
+                destination: "Santos",
+                departureDate: "2025-09-11",
+                arrivalDate: "2025-10-01",
+                cargo: "Fogões 2Bocas 3 Ordem",
+                status: "Em Produção",
+                containerCount: 4,
+                productNumbers: "35, 36, 37, 38"
             }
-        };
+        ];
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const productGrid = document.getElementById('product-grid');
-            const modal = document.getElementById('product-modal');
-            const modalTitle = document.getElementById('modal-title');
-            const modalImage = document.getElementById('modal-image');
-            const modalDescription = document.getElementById('modal-description');
-            const modalApplications = document.getElementById('modal-applications');
-            const modalObservations = document.getElementById('modal-observations');
-            const closeButtons = [document.getElementById('modal-close-btn'), document.getElementById('modal-close-btn-footer')];
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('pt-BR', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('currentTime').textContent = timeString;
+        }
 
-            Object.keys(productData).forEach(key => {
-                const product = productData[key];
-                const card = document.createElement('div');
-                card.className = 'bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col items-start';
-                card.dataset.productId = key;
+        function calculateDaysRemaining(arrivalDate) {
+            const today = new Date();
+            const arrival = new Date(arrivalDate);
+            const diffTime = arrival - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays;
+        }
 
-                card.innerHTML = `
-                    <div class="mb-4 w-full h-36 flex items-center justify-center overflow-hidden rounded-lg bg-gray-100">
-                        <img src="${product.imageUrl}" alt="${product.title}" class="object-contain max-h-full max-w-full">
+        function getStatusInfo(container, daysRemaining) {
+            // Usar o status real do container
+            if (container.status === 'Em Produção') {
+                return { status: 'Em Produção', color: 'orange', bgColor: 'bg-orange-500/20', textColor: 'text-orange-400' };
+            } else if (container.status === 'Embarcado') {
+                if (daysRemaining < 0) {
+                    return { status: 'Atrasado', color: 'red', bgColor: 'bg-red-500/20', textColor: 'text-red-400' };
+                } else if (daysRemaining === 0) {
+                    return { status: 'Chegando Hoje', color: 'green', bgColor: 'bg-green-500/20', textColor: 'text-green-400' };
+                } else if (daysRemaining <= 3) {
+                    return { status: 'Chegando em Breve', color: 'yellow', bgColor: 'bg-yellow-500/20', textColor: 'text-yellow-400' };
+                } else {
+                    return { status: 'Embarcado', color: 'blue', bgColor: 'bg-blue-500/20', textColor: 'text-blue-400' };
+                }
+            } else {
+                return { status: container.status, color: 'gray', bgColor: 'bg-gray-500/20', textColor: 'text-gray-400' };
+            }
+        }
+
+        function calculateProgress(departureDate, arrivalDate) {
+            const departure = new Date(departureDate);
+            const arrival = new Date(arrivalDate);
+            const today = new Date();
+            
+            const totalDays = (arrival - departure) / (1000 * 60 * 60 * 24);
+            const daysPassed = (today - departure) / (1000 * 60 * 60 * 24);
+            
+            const progress = Math.max(0, Math.min(100, (daysPassed / totalDays) * 100));
+            return Math.round(progress);
+        }
+
+        function renderShipPosition(progress) {
+            const shipPosition = Math.min(90, progress);
+            return `
+                <div class="relative h-16 bg-gradient-to-r from-blue-900 to-blue-700 rounded-lg overflow-hidden">
+                    <div class="absolute bottom-0 left-0 right-0 h-2 bg-blue-600 wave"></div>
+                    <div class="absolute bottom-2 transition-all duration-1000 ship-animation" style="left: ${shipPosition}%;">
+                        <div class="text-2xl">🚢</div>
                     </div>
-                    <h3 class="text-xl font-bold text-[#3a3a3a] mb-2">${product.title}</h3>
-                    <p class="text-gray-600 text-sm flex-grow">${product.description.substring(0, 100)}...</p>
-                    <span class="mt-4 text-sm font-semibold text-[#6B8A7A]">Ver detalhes →</span>
+                    <div class="absolute top-2 left-4 text-xs text-blue-200">China</div>
+                    <div class="absolute top-2 right-4 text-xs text-blue-200">Brasil</div>
+                    <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-blue-200">
+                        ${progress}% da viagem
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderContainers() {
+            const containersList = document.getElementById('containersList');
+            
+            if (containers.length === 0) {
+                containersList.innerHTML = `
+                    <div class="p-8 text-center text-slate-400">
+                        <div class="text-4xl mb-4">📦</div>
+                        <p>Nenhum container em monitoramento</p>
+                        <p class="text-sm mt-2">Adicione um container para começar o rastreamento</p>
+                    </div>
                 `;
-                productGrid.appendChild(card);
+                return;
+            }
+
+            containersList.innerHTML = containers.map(container => {
+                const daysRemaining = calculateDaysRemaining(container.arrivalDate);
+                const statusInfo = getStatusInfo(container, daysRemaining);
+                const progress = container.status === 'Em Produção' ? 0 : calculateProgress(container.departureDate, container.arrivalDate);
+                
+                return `
+                    <div class="p-6 hover:bg-slate-700/30 transition-colors">
+                        <div class="flex flex-col lg:flex-row lg:items-center gap-6">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-4 mb-4">
+                                    <h3 class="text-lg font-semibold">${container.number}</h3>
+                                    <span class="px-3 py-1 rounded-full text-sm font-medium ${statusInfo.bgColor} ${statusInfo.textColor} ${daysRemaining < 0 && container.status === 'Embarcado' ? 'status-urgent' : ''}">
+                                        ${statusInfo.status}
+                                    </span>
+                                    <span class="px-2 py-1 bg-purple-500/20 text-purple-400 rounded text-xs font-medium">
+                                        ${container.containerCount} container${container.containerCount > 1 ? 's' : ''}
+                                    </span>
+                                </div>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                                    <div>
+                                        <p class="text-slate-400">Produtos</p>
+                                        <p class="font-medium">${container.productNumbers}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-slate-400">Origem → Destino</p>
+                                        <p class="font-medium">${container.origin} → ${container.destination}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-slate-400">Previsão de Chegada</p>
+                                        <p class="font-medium">${new Date(container.arrivalDate).toLocaleDateString('pt-BR')}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-slate-400">Descrição</p>
+                                        <p class="font-medium">${container.cargo}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="lg:w-80">
+                                <div class="mb-2 flex justify-between text-sm">
+                                    <span class="text-slate-400">
+                                        ${container.status === 'Em Produção' ? 'Aguardando Embarque' : 'Progresso da Viagem'}
+                                    </span>
+                                    <span class="font-medium ${statusInfo.textColor}">
+                                        ${container.status === 'Em Produção' ? 'Produzindo...' :
+                                          daysRemaining < 0 ? `${Math.abs(daysRemaining)} dias atrasado` : 
+                                          daysRemaining === 0 ? 'Chegando hoje!' : 
+                                          `${daysRemaining} dias restantes`}
+                                    </span>
+                                </div>
+                                ${container.status === 'Em Produção' ? 
+                                    `<div class="relative h-16 bg-gradient-to-r from-orange-900 to-orange-700 rounded-lg overflow-hidden flex items-center justify-center">
+                                        <div class="text-2xl animate-pulse">🏭</div>
+                                        <div class="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-xs text-orange-200">
+                                            Em Produção
+                                        </div>
+                                    </div>` : 
+                                    renderShipPosition(progress)
+                                }
+                            </div>
+                            
+                            <div class="flex gap-2">
+                                <button onclick="editContainer(${container.id})" class="px-4 py-2 bg-slate-600 hover:bg-slate-700 rounded-lg text-sm transition-colors">
+                                    ✏️ Editar
+                                </button>
+                                <button onclick="deleteContainer(${container.id})" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm transition-colors">
+                                    🗑️ Excluir
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateSummary() {
+            let embarcadoCount = 0;
+            let producaoCount = 0;
+            let todayCount = 0;
+            let delayedCount = 0;
+            
+            containers.forEach(container => {
+                const daysRemaining = calculateDaysRemaining(container.arrivalDate);
+                
+                if (container.status === 'Em Produção') {
+                    producaoCount++;
+                } else if (container.status === 'Embarcado') {
+                    if (daysRemaining < 0) {
+                        delayedCount++;
+                    } else if (daysRemaining === 0) {
+                        todayCount++;
+                    } else {
+                        embarcadoCount++;
+                    }
+                }
             });
             
-            productGrid.addEventListener('click', (event) => {
-                const card = event.target.closest('[data-product-id]');
-                if (card) {
-                    const productId = card.dataset.productId;
-                    const product = productData[productId];
-                    
-                    modalTitle.textContent = product.title;
-                    modalImage.src = product.imageUrl;
-                    modalImage.alt = `Imagem do Produto: ${product.title}`;
-                    modalDescription.textContent = product.description;
-                    modalApplications.textContent = product.applications;
-                    modalObservations.textContent = product.observations;
-                    
-                    modal.classList.remove('hidden');
-                }
-            });
+            document.getElementById('transitCount').textContent = embarcadoCount;
+            document.getElementById('todayCount').textContent = todayCount;
+            document.getElementById('delayedCount').textContent = delayedCount;
+            document.getElementById('totalCount').textContent = containers.length;
+        }
 
-            const closeModal = () => {
-                modal.classList.add('hidden');
-            };
+        function showAddModal() {
+            document.getElementById('addModal').classList.remove('hidden');
+            document.getElementById('addModal').classList.add('flex');
+        }
 
-            closeButtons.forEach(button => button.addEventListener('click', closeModal));
-            modal.addEventListener('click', (event) => {
-                if (event.target === modal) {
-                    closeModal();
+        function hideAddModal() {
+            document.getElementById('addModal').classList.add('hidden');
+            document.getElementById('addModal').classList.remove('flex');
+            
+            // Resetar estado de edição
+            editingContainerId = null;
+            
+            // Resetar título do modal
+            document.querySelector('#addModal h3').textContent = 'Adicionar Novo Container';
+            document.querySelector('#addModal button[onclick="addContainer()"]').textContent = 'Adicionar';
+            
+            // Limpar formulário
+            document.getElementById('containerNumber').value = '';
+            document.getElementById('cargoDescription').value = '';
+            document.getElementById('departureDate').value = '';
+            document.getElementById('arrivalDate').value = '';
+            document.getElementById('productNumbers').value = '';
+            document.getElementById('containerCount').value = '1';
+        }
+
+        function addContainer() {
+            const number = document.getElementById('containerNumber').value;
+            const origin = document.getElementById('originPort').value;
+            const destination = document.getElementById('destinationPort').value;
+            const departureDate = document.getElementById('departureDate').value;
+            const arrivalDate = document.getElementById('arrivalDate').value;
+            const cargo = document.getElementById('cargoDescription').value;
+            const status = document.getElementById('containerStatus').value;
+            const productNumbers = document.getElementById('productNumbers').value;
+            const containerCount = parseInt(document.getElementById('containerCount').value);
+            
+            if (!number || !arrivalDate || !cargo || !productNumbers) {
+                alert('Por favor, preencha todos os campos obrigatórios.');
+                return;
+            }
+            
+            if (editingContainerId) {
+                // Editando container existente
+                const containerIndex = containers.findIndex(c => c.id === editingContainerId);
+                if (containerIndex !== -1) {
+                    containers[containerIndex] = {
+                        id: editingContainerId,
+                        number,
+                        origin,
+                        destination,
+                        departureDate,
+                        arrivalDate,
+                        cargo,
+                        status,
+                        productNumbers,
+                        containerCount
+                    };
                 }
-            });
-        });
+                editingContainerId = null;
+            } else {
+                // Adicionando novo container
+                const newContainer = {
+                    id: Date.now(),
+                    number,
+                    origin,
+                    destination,
+                    departureDate,
+                    arrivalDate,
+                    cargo,
+                    status,
+                    productNumbers,
+                    containerCount
+                };
+                containers.push(newContainer);
+            }
+            
+            renderContainers();
+            updateSummary();
+            hideAddModal();
+        }
+
+        function deleteContainer(id) {
+            if (confirm('Tem certeza que deseja excluir este container?')) {
+                containers = containers.filter(c => c.id !== id);
+                renderContainers();
+                updateSummary();
+            }
+        }
+
+        let editingContainerId = null;
+
+        function editContainer(id) {
+            const container = containers.find(c => c.id === id);
+            if (!container) return;
+            
+            editingContainerId = id;
+            
+            // Preencher modal com dados existentes
+            document.getElementById('containerNumber').value = container.number;
+            document.getElementById('originPort').value = container.origin;
+            document.getElementById('destinationPort').value = container.destination;
+            document.getElementById('departureDate').value = container.departureDate;
+            document.getElementById('arrivalDate').value = container.arrivalDate;
+            document.getElementById('cargoDescription').value = container.cargo;
+            document.getElementById('containerStatus').value = container.status;
+            document.getElementById('productNumbers').value = container.productNumbers;
+            document.getElementById('containerCount').value = container.containerCount;
+            
+            // Alterar título do modal
+            document.querySelector('#addModal h3').textContent = 'Editar Container';
+            document.querySelector('#addModal button[onclick="addContainer()"]').textContent = 'Salvar Alterações';
+            
+            showAddModal();
+        }
+
+        // Inicialização
+        setInterval(updateTime, 1000);
+        updateTime();
+        renderContainers();
+        updateSummary();
+        
+        // Atualizar dados a cada minuto
+        setInterval(() => {
+            renderContainers();
+            updateSummary();
+        }, 60000);
     </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97b0c9dc735cf620',t:'MTc1NzE5MTMwMC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
-�
